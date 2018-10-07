@@ -1,19 +1,29 @@
 import * as THREE from "three";
 import OrbitControls from "three-orbitcontrols";
+import { configuration } from "./menu";
 
 export const renderTriangle = () => {
   const scene = new THREE.Scene();
 
-  const makeCamera = () => {
-    const perspectiveCamera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      50
-    );
-    perspectiveCamera.position.set(5, 10, 30);
-    perspectiveCamera.rotation.set(-Math.PI / 4, 0, 0);
+  const position = (base, offset) => ({
+    x: (base.x || 0) + (offset.x || 0),
+    y: (base.y || 0) + (offset.y || 0),
+    z: (base.z || 0) + (offset.z || 0)
+  });
 
+  const makePerspectiveCamera = () => {
+    const perspectiveCamera = new THREE.PerspectiveCamera(
+      45,
+      window.innerWidth / window.innerHeight,
+      1,
+      5000
+    );
+    perspectiveCamera.position.set(25, 25, 25);
+    perspectiveCamera.rotation.set(-Math.PI / 4, 0, 0);
+    return perspectiveCamera;
+  };
+
+  const makeOrthographicCamera = () => {
     const orthographicCamera = new THREE.OrthographicCamera(
       window.innerWidth / -2,
       window.innerWidth / 2,
@@ -31,17 +41,12 @@ export const renderTriangle = () => {
     return orthographicCamera;
   };
 
-  const makeRenderer = camera => {
+  const makeRenderer = () => {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0xffff9d, 1);
     document.body.appendChild(renderer.domElement);
-
-    if (camera.isPerspectiveCamera) {
-      var orbit = new OrbitControls(camera, renderer.domElement);
-      orbit.enableZoom = false;
-    }
     return renderer;
   };
 
@@ -66,7 +71,6 @@ export const renderTriangle = () => {
 
   const addBeams = () => {
     const coloredMesh = (geometry, colors) => {
-      // Create an array of materials to be used in a cube, one for each side
       var cubeMaterialArray = [];
 
       // order to add materials: x+,x-,y+,y-,z+,z-
@@ -76,12 +80,7 @@ export const renderTriangle = () => {
       cubeMaterialArray.push(phongMaterial(colors[1]));
       cubeMaterialArray.push(phongMaterial(colors[2]));
       cubeMaterialArray.push(phongMaterial(colors[2]));
-
-      var cubeMaterials = new THREE.MeshFaceMaterial(cubeMaterialArray);
-
-      // using THREE.MeshFaceMaterial() in the constructor below
-      //   causes the mesh to use the materials stored in the geometry
-      return new THREE.Mesh(geometry, cubeMaterials);
+      return new THREE.Mesh(geometry, cubeMaterialArray);
     };
 
     const makeGroup = (size, position, colors) => {
@@ -109,16 +108,12 @@ export const renderTriangle = () => {
       makeGroup({ width: 1, height: 1, depth: 16 }, origin, colors),
       makeGroup(
         { width: 1, height: 14, depth: 1 },
-        Object.assign({}, origin, { y: origin.y + 7.5, z: origin.z + 7.5 }),
+        position(origin, { y: 7.5, z: 7.5 }),
         colors
       ),
       makeGroup(
         { width: 16, height: 1, depth: 1 },
-        Object.assign({}, origin, {
-          x: origin.x - 7.5,
-          y: 0,
-          z: origin.z - 7.5
-        }),
+        position(origin, { x: -7.5, z: -7.5 }),
         colors
       )
     ];
@@ -138,48 +133,45 @@ export const renderTriangle = () => {
       plane.position.set(x, y, z);
       return plane;
     };
-    scene.add(
-      makeTile(
-        { x: origin.x + 1, y: origin.y + 15, z: origin.z + 8 },
-        colors[2]
-      )
-    );
-    scene.add(
-      makeTile({ x: origin.x, y: origin.y + 15, z: origin.z + 8 }, colors[2])
-    );
+    scene.add(makeTile(position(origin, { x: 1, y: 15, z: 8 }), colors[2]));
+    scene.add(makeTile(position(origin, { y: 15, z: 8 }), colors[2]));
   };
 
-  const addGrid = () => {
-    var grid = new THREE.GridHelper(100, 100);
-    // grid.geometry.rotateX( Math.PI / 2 );
+  // const addGrid = () => {
+  //   var grid = new THREE.GridHelper(100, 100);
+  //   scene.add(grid);
+  // };
 
-    // var vector = new THREE.Vector3( 1, 1, 1 );
-    // grid.lookAt( vector );
-
-    // scene.add( grid );
-
-    // var grid = new THREE.GridHelper( 100, 100 );
-    scene.add(grid);
-  };
-
-  const random = (upper, lower = 0) =>
-    Math.floor(Math.random() * upper) + lower;
+  // const random = (upper, lower = 0) =>
+  //   Math.floor(Math.random() * upper) + lower;
   const isTilted = camera =>
     Math.abs(Math.sin(camera.rotation.z)) > 0.015 &&
     Math.abs(Math.cos(camera.rotation.z)) > 0.015;
 
   const origin = { x: 3.5, y: 0, z: 0 };
-  const colors = [0xff6138, 0x00a388, 0x000000];
-  const camera = makeCamera();
-  const renderer = makeRenderer(camera);
-  scene.add(camera);
+  const colors = [0xff6138, 0x00a388, 0x0f0f0f];
+
+  let perspectiveCamera = makePerspectiveCamera();
+  let orthographicCamera = makeOrthographicCamera();
+
+  let camera = orthographicCamera;
+  let renderer = makeRenderer();
+  let orbit;
   addLights();
   addBeams();
   addCorrectingTiles();
   var render = function() {
     requestAnimationFrame(render);
-
-    if (isTilted(camera)) {
+    camera = configuration.perspectiveCamera
+      ? perspectiveCamera
+      : orthographicCamera;
+    if (camera.isPerspectiveCamera) {
+      if (!orbit) {
+        orbit = new OrbitControls(camera, renderer.domElement);
+        orbit.enableZoom = false;
+      }
+    }
+    if (camera.isOrthographicCamera && isTilted(camera)) {
       camera.rotation.z += 0.025;
     }
 
@@ -188,10 +180,13 @@ export const renderTriangle = () => {
 
   window.addEventListener("keydown", function(event) {
     if (event.keyCode === 32) {
-      while (!isTilted(camera)) {
+      while (camera.isOrthographicCamera && !isTilted(camera)) {
         camera.rotation.z += 0.025;
         camera.updateProjectionMatrix();
       }
+    }
+    if (event.keyCode === 13) {
+      configuration.perspectiveCamera = !configuration.perspectiveCamera;
     }
   });
 
