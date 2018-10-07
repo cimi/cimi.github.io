@@ -1,9 +1,11 @@
 {
-  "name": "triangle",
+  "name": "penrose-triangle",
+  "homepage": "https//cimi.io/",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
     "@parasti/shadergraph": "^2.0.8-0",
+    "dat.gui": "^0.7.3",
     "react": "^16.5.2",
     "react-dom": "^16.5.2",
     "react-scripts": "2.0.4",
