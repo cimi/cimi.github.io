@@ -1,10 +1,13 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import * as serviceWorker from './serviceWorker';
+import "./index.css";
+import { renderTriangle } from "./triangle";
 
-ReactDOM.render(<App />, document.getElementById('root'));
+import * as serviceWorker from "./serviceWorker";
+
+window.onload = () => {
+  renderTriangle();
+};
+
+// ReactDOM.render(<App />, document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
