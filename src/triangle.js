@@ -160,7 +160,8 @@ export const renderTriangle = () => {
   addLights();
   addBeams();
   addCorrectingTiles();
-  var render = function() {
+
+  const render = () => {
     requestAnimationFrame(render);
     camera = configuration.perspectiveCamera
       ? perspectiveCamera
@@ -178,28 +179,41 @@ export const renderTriangle = () => {
     renderer.render(scene, camera);
   };
 
-  window.addEventListener("keydown", function(event) {
-    if (event.keyCode === 32) {
-      while (camera.isOrthographicCamera && !isTilted(camera)) {
-        camera.rotation.z += 0.025;
-        camera.updateProjectionMatrix();
-      }
-    }
-    if (event.keyCode === 13) {
-      configuration.perspectiveCamera = !configuration.perspectiveCamera;
-    }
-  });
-
-  window.addEventListener(
-    "resize",
-    function() {
-      camera.aspect = window.innerWidth / window.innerHeight;
+  const handleClick = event => {
+    while (camera.isOrthographicCamera && !isTilted(camera)) {
+      camera.rotation.z += 0.025;
       camera.updateProjectionMatrix();
+    }
+  };
 
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    },
-    false
-  );
+  const handleDoubleClick = event => {
+    configuration.perspectiveCamera = !configuration.perspectiveCamera;
+  };
+
+  const handleResize = event => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  };
+
+  const handleKeyDown = event => {
+    switch (event.keyCode) {
+      case 32:
+        handleClick(event);
+        break;
+      case 13:
+        handleDoubleClick(event);
+        break;
+      default:
+        break;
+    }
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+  window.addEventListener("click", handleClick);
+  window.addEventListener("dblclick", handleDoubleClick);
+  window.addEventListener("resize", handleResize, false);
 
   render();
 };
