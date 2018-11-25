@@ -191,7 +191,7 @@ export const renderTriangle = () => {
   };
 
   const handleResize = event => {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = 1; //window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -213,7 +213,8 @@ export const renderTriangle = () => {
   window.addEventListener("keydown", handleKeyDown);
   window.addEventListener("click", handleClick);
   window.addEventListener("dblclick", handleDoubleClick);
-  window.addEventListener("resize", handleResize, false);
+  window.addEventListener("resize", handleResize);
+  window.addEventListener("orientationchange", handleResize);
 
   render();
 };
