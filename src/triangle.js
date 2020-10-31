@@ -1,5 +1,9 @@
 import * as THREE from "three";
-import OrbitControls from "three-orbitcontrols";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
+import { GlitchPass } from "three/examples/jsm/postprocessing/GlitchPass";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
+
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { configuration } from "./menu";
 
 export const renderTriangle = () => {
@@ -41,13 +45,14 @@ export const renderTriangle = () => {
     return orthographicCamera;
   };
 
-  const makeRenderer = () => {
+  const makeComposer = () => {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0xffff9d, 1);
     document.body.appendChild(renderer.domElement);
-    return renderer;
+    const composer = new EffectComposer(renderer);
+    return composer;
   };
 
   const addLights = () => {
@@ -155,7 +160,13 @@ export const renderTriangle = () => {
   let orthographicCamera = makeOrthographicCamera();
 
   let camera = orthographicCamera;
-  let renderer = makeRenderer();
+  let composer = makeComposer();
+  const renderPass = new RenderPass(scene, camera);
+  composer.addPass(renderPass);
+
+  const glitchPass = new GlitchPass();
+  composer.addPass(glitchPass);
+
   let orbit;
   addLights();
   addBeams();
@@ -168,15 +179,17 @@ export const renderTriangle = () => {
       : orthographicCamera;
     if (camera.isPerspectiveCamera) {
       if (!orbit) {
-        orbit = new OrbitControls(camera, renderer.domElement);
+        orbit = new OrbitControls(camera, composer.renderer.domElement);
         orbit.enableZoom = false;
+        orbit.update();
       }
     }
     if (camera.isOrthographicCamera && isTilted(camera)) {
       camera.rotation.z += 0.025;
     }
-
-    renderer.render(scene, camera);
+    renderPass.camera = camera;
+    renderPass.scene = scene;
+    composer.render();
   };
 
   const handleClick = event => {
@@ -194,7 +207,7 @@ export const renderTriangle = () => {
     camera.aspect = 1; //window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
   };
 
   const handleKeyDown = event => {
