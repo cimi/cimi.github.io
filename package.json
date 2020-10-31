@@ -5,7 +5,7 @@
   "private": true,
   "dependencies": {
     "dat.gui": "^0.7.3",
-    "react-scripts": "4.0.0",
+    "react-scripts": "3.4.3",
     "three": "^0.115.0"
   },
   "lint-staged": {
